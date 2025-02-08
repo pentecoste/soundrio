@@ -18,8 +18,10 @@ public class AudioPlayer {
 
     private MediaPlayer currentPlayer;
 
-    public void playAudio(String filePath, boolean directory) {
-        stopAudio();
+    public synchronized void playAudio(String filePath, boolean directory) {
+        if (currentPlayer != null) {
+            stopAudio();
+        }
 
         Media media;
         File mediaFile;
@@ -37,14 +39,15 @@ public class AudioPlayer {
         currentPlayer.play();
     }
 
-    public void stopAudio() {
+    public synchronized void stopAudio() {
         if (currentPlayer != null) {
             currentPlayer.stop();
             currentPlayer.dispose();
+            currentPlayer = null;
         }
     }
 
-    public static File getRandomAudioFile(String directoryPath) throws IOException {
+    public synchronized static File getRandomAudioFile(String directoryPath) throws IOException {
         Path dir = Path.of(directoryPath);
         try (Stream<Path> paths = Files.walk(dir)) {
             List<File> audioFiles = paths
