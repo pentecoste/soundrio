@@ -73,9 +73,9 @@
             <id>default-cli</id>
             <configuration>
               <mainClass>soundrio.soundrio.soundrio/soundrio.soundrio.soundrio.Soundrio</mainClass>
-              <launcher>app</launcher>
-              <jlinkZipName>app</jlinkZipName>
-              <jlinkImageName>app</jlinkImageName>
+              <launcher>Soundrio</launcher>
+              <jlinkZipName>Soundrio</jlinkZipName>
+              <jlinkImageName>Soundrio</jlinkImageName>
               <noManPages>true</noManPages>
               <stripDebug>true</stripDebug>
               <noHeaderFiles>true</noHeaderFiles>

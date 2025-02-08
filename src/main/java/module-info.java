@@ -5,6 +5,6 @@ module soundrio.soundrio.soundrio {
     requires com.google.gson;
     requires com.github.kwhat.jnativehook;
 
-    opens soundrio.soundrio.soundrio to javafx.fxml;
+    opens soundrio.soundrio.soundrio to javafx.fxml, com.google.gson;
     exports soundrio.soundrio.soundrio;
 }

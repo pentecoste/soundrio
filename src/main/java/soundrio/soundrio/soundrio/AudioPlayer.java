@@ -40,6 +40,7 @@ public class AudioPlayer {
     public void stopAudio() {
         if (currentPlayer != null) {
             currentPlayer.stop();
+            currentPlayer.dispose();
         }
     }
 
