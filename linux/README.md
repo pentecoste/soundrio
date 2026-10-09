@@ -35,9 +35,9 @@ as microphone and speakers. Useful options:
 | `--keep-default-mic` | do not change the default source |
 | `--no-start` | only write files |
 
-The script can be re-run at any time. Microphone and speakers are remembered
-from the previous run, and the audio devices are restarted only if their
-configuration actually changed.
+The script can be re-run at any time. Microphone, speakers and image location
+are remembered from the previous run, and the audio devices are restarted only
+if their configuration actually changed.
 
 ## What you get
 

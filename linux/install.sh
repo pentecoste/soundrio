@@ -9,9 +9,9 @@ usage() {
     cat <<USAGE
 usage: install.sh [options]
 
-  --dir DIR         where the Soundrio runtime image lives
-                    (default: \$XDG_DATA_HOME/soundrio). If DIR has no image,
-                    one is built with Maven and copied there.
+  --dir DIR         where the Soundrio runtime image lives (default: the one
+                    already configured, else \$XDG_DATA_HOME/soundrio). If DIR
+                    has no image, one is built with Maven and copied there.
   --update          rebuild the image and copy it over DIR (bindings.json is kept)
   --mic NAME        source to mix with the soundboard
                     (default: the one already configured, else the default source)
@@ -28,8 +28,8 @@ here=$(cd "$(dirname "$0")" && pwd)
 repo=$(dirname "$here")
 conf="${XDG_CONFIG_HOME:-$HOME/.config}"
 bin="$HOME/.local/bin"
-dir="${XDG_DATA_HOME:-$HOME/.local/share}/soundrio"
-mic= speakers= update=0 start=1 default_mic=1
+unit="$conf/systemd/user/soundrio.service"
+dir= mic= speakers= update=0 start=1 default_mic=1
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -45,6 +45,12 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# Like microphone and speakers below, the image location is remembered from
+# the previous run.
+if [ -z "$dir" ] && [ -f "$unit" ]; then
+    dir=$(sed -n "s|^WorkingDirectory=\\(.*\\)/bin\$|\\1|p" "$unit" | sed "s|^%h|$HOME|" | head -n 1)
+fi
+[ -n "$dir" ] || dir="${XDG_DATA_HOME:-$HOME/.local/share}/soundrio"
 case "$dir" in /*) ;; *) dir="$PWD/$dir" ;; esac
 
 for cmd in pipewire pactl systemctl; do
@@ -64,6 +70,9 @@ if [ ! -x "$dir/bin/java" ] || [ "$update" = 1 ]; then
     fi
     mkdir -p "$dir"
     cp -a "$built/." "$dir/"
+    # JNativeHook cannot unpack its native library from inside a jlink image
+    # ("URI scheme is not file"): it has to be on the image's library path.
+    install -Dm644 "$repo/src/main/resources/libJNativeHook.so" "$dir/lib/libJNativeHook.so"
     image_changed=1
 fi
 
@@ -124,11 +133,11 @@ same_conf() {
 audio_changed=1
 same_conf "$tmp/soundboard.conf" "$existing" && audio_changed=0
 unit_changed=1
-cmp -s "$tmp/soundrio.service" "$conf/systemd/user/soundrio.service" && unit_changed=0
+cmp -s "$tmp/soundrio.service" "$unit" && unit_changed=0
 
 install -Dm644 "$tmp/soundboard.conf" "$existing"
 install -Dm644 "$here/soundboard-audio.service" "$conf/systemd/user/soundboard-audio.service"
-install -Dm644 "$tmp/soundrio.service" "$conf/systemd/user/soundrio.service"
+install -Dm644 "$tmp/soundrio.service" "$unit"
 install -Dm755 "$here/soundrio-ctl" "$bin/soundrio-ctl"
 install -Dm755 "$tmp/soundrio" "$bin/soundrio"
 
