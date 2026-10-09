@@ -1,0 +1,5 @@
+# Maven build output
+target/
+
+# IntelliJ IDEA project files
+.idea/
