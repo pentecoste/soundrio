@@ -1,0 +1,15 @@
+[Unit]
+Description=Soundrio virtual audio devices (SoundBoard, MixedOutput, SoundBoardMic)
+After=pipewire.service pipewire-session-manager.service
+BindsTo=pipewire.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/pipewire -c soundboard.conf
+Restart=on-failure
+RestartSec=2
+Slice=session.slice
+
+[Install]
+# Like the session manager: (re)started whenever pipewire is.
+WantedBy=pipewire.service

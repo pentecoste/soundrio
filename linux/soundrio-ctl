@@ -1,0 +1,78 @@
+#!/bin/sh
+# Enable/disable the soundboard (soundrio.service).
+#
+#   soundrio-ctl on|off|toggle   change state
+#   soundrio-ctl autostart       for WM startup: start unless it was disabled
+#   soundrio-ctl status          print "on" or "off"
+#   soundrio-ctl label           status label for a polybar custom/ipc module
+#   soundrio-ctl refresh         re-run the polybar hook (used by the unit)
+#
+# When off the process does not exist at all: no key is being listened to.
+# The choice survives reboots (state file below).
+
+UNIT=soundrio.service
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/soundrio"
+DISABLED="$STATE_DIR/disabled"
+
+is_on() {
+    case "$(systemctl --user is-active "$UNIT")" in
+        active|activating) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+refresh_bar() {
+    command -v polybar-msg >/dev/null 2>&1 &&
+        polybar-msg action "#soundrio.hook.0" >/dev/null 2>&1
+    return 0
+}
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 || return 0
+    timeout 2 notify-send -a Soundrio -t 1500 \
+        -h string:x-canonical-private-synchronous:soundrio "Soundrio" "$1" >/dev/null 2>&1 &
+}
+
+start() {
+    # the key hook needs X: make sure systemd knows about the display
+    [ -n "$DISPLAY" ] && systemctl --user import-environment DISPLAY XAUTHORITY 2>/dev/null
+    systemctl --user start "$UNIT"
+}
+
+case "$1" in
+    on)
+        rm -f "$DISABLED"
+        start && notify "Soundboard enabled"
+        ;;
+    off)
+        mkdir -p "$STATE_DIR" && : > "$DISABLED"
+        systemctl --user stop "$UNIT" && notify "Soundboard disabled"
+        ;;
+    toggle)
+        if is_on; then exec "$0" off; else exec "$0" on; fi
+        ;;
+    autostart)
+        [ -e "$DISABLED" ] || start
+        # at login the bar may come up after us: poke it again later
+        ( sleep 5; refresh_bar ) &
+        ;;
+    status)
+        if is_on; then echo on; else echo off; fi
+        exit 0
+        ;;
+    label)
+        if is_on; then echo "SB on"; else echo "%{F#707880}SB off%{F-}"; fi
+        exit 0
+        ;;
+    refresh)
+        refresh_bar
+        exit 0
+        ;;
+    *)
+        echo "usage: $(basename "$0") on|off|toggle|autostart|status|label|refresh" >&2
+        exit 2
+        ;;
+esac
+rc=$?
+refresh_bar
+exit $rc

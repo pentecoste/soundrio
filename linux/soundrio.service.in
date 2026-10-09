@@ -1,0 +1,22 @@
+[Unit]
+Description=Soundrio soundboard (headless)
+Wants=soundboard-audio.service
+After=soundboard-audio.service
+
+[Service]
+Type=exec
+# bindings.json is read from the working directory
+WorkingDirectory=@DIR@/bin
+ExecStart=@DIR@/bin/java -m soundrio.soundrio.soundrio/soundrio.soundrio.soundrio.Soundrio --headless
+# Soundrio always plays into MixedOutput (speakers + SoundBoard)
+Environment=PULSE_SINK=MixedOutput PIPEWIRE_NODE=MixedOutput
+Restart=on-failure
+RestartSec=3
+# the JVM exits with 143 on SIGTERM
+SuccessExitStatus=143
+# keep the status bar indicator in sync on every state change (crashes too)
+ExecStartPost=-@BIN@/soundrio-ctl refresh
+ExecStopPost=-@BIN@/soundrio-ctl refresh
+
+# No [Install]: start it from your window manager with `soundrio-ctl autostart`,
+# once X is up (the global key hook needs the display).
